@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bootstrap
+  namespace: kube-system
+data:
+  ################################################################################
+  #                           REQUIRED HELM VALUES
+  # Use this file to list the required values that must provided to this chart.
+  # This is kind of a hack but it's useful and you can be sure your charts get
+  # all the required values.
+  #
+  ################################################################################
+  # REQUIRED DOCKER REGISTRY VARS
+  {{- if .Values.dockerRegistry.enabled }}
+  r: {{required "A valid .Values.dockerRegistry.REGISTRY_STORAGE_S3_ACCESSKEY entry required!" .Values.dockerRegistry.REGISTRY_STORAGE_S3_ACCESSKEY }}
+  r: {{required "A valid .Values.dockerRegistry.REGISTRY_STORAGE_S3_SECRETKEY entry required!" .Values.dockerRegistry.REGISTRY_STORAGE_S3_SECRETKEY }}
+  r: {{required "A valid .Values.dockerRegistry.REGISTRY_STORAGE_S3_BUCKET entry required!" .Values.dockerRegistry.REGISTRY_STORAGE_S3_BUCKET }}
+  r: {{required "A valid .Values.dockerRegistry.REGISTRY_HTTP_SECRET entry required!" .Values.dockerRegistry.REGISTRY_HTTP_SECRET }}
+  {{- end }}
+  # REQUIRED SNAP EBS VARS
+  {{- if .Values.snapEbs.enabled }}
+  r: {{required "A valid .Values.snapEbs.EBS_SNAP_PASSWORD_ACCESSKEY entry required!" .Values.snapEbs.EBS_SNAP_PASSWORD_ACCESSKEY }}
+  r: {{required "A valid .Values.snapEbs.EBS_SNAP_PASSWORD_SECRETKEY entry required!" .Values.snapEbs.EBS_SNAP_PASSWORD_SECRETKEY }}
+  {{- end }}
+  # REQUIRED NODE LABEL VARS
+  {{- if .Values.nodelabel.enabled }}
+  r: {{required "A valid .Values.nodelabel.PROD_READONLY_SA_AWS_DEFAULT_REGION entry required!" .Values.nodelabel.PROD_READONLY_SA_AWS_DEFAULT_REGION }}
+  r: {{required "A valid .Values.nodelabel.PROD_READONLY_SA_AWS_ACCESS_KEY_ID entry required!" .Values.nodelabel.PROD_READONLY_SA_AWS_ACCESS_KEY_ID }}
+  r: {{required "A valid .Values.nodelabel.PROD_READONLY_SA_AWS_SECRET_ACCESS_KEY entry required!" .Values.nodelabel.PROD_READONLY_SA_AWS_SECRET_ACCESS_KEY }}
+  {{- end }}

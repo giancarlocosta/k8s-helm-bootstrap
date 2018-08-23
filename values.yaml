@@ -1,0 +1,76 @@
+# DEFAULT VALUES
+
+# The additonal namespaces to add to the cluster
+customNamespaces:
+  - monitor
+  - ops
+
+################################################################################
+# Default resources (storageclasses, serviceaccounts, etc)
+################################################################################
+defaults:
+  storageClassAWS:
+    enabled: true
+  kubesystemServiceaccount:
+    enabled: true
+  monitorServiceaccount:
+    enabled: true
+
+rbac:
+  clusterroles:
+    enabled: true
+################################################################################
+# 'kube-system' namespace
+################################################################################
+nodelabel:
+  enabled: true
+  namespace: kube-system
+
+externaldns:
+  enabled: true
+  namespace: kube-system
+  # Any AWS hosted zones that external-dns should be able to create records in.
+  # Lookup hosted zone with 'terraform output prod_r53_zone_name' and then
+  # add any other hosted zones this external dns will need to access
+  hostedZones:
+    - "prod-elk.yournetwork.net"
+
+################################################################################
+# 'monitor' namespace
+################################################################################
+kubernetesEventLogger:
+  enabled: true
+  namespace: monitor
+
+ingressController:
+  enabled: true
+  namespace: monitor
+
+################################################################################
+# 'ops' namespace
+################################################################################
+dockerRegistry:
+  enabled: true
+  namespace: ops
+
+snapEbs:
+  enabled: true
+  namespace: ops
+  config:
+    snap-ebs.yaml: |-
+      # list of tags to put in the snapshot's labels tag
+      labels: [prod-elk,prod-elk.yournetwork.net]
+      # default backup and retention policies
+      policies:
+        - {interval: {hours: 1}, retain: 2}
+        - {interval: {days: 1}, retain: 7}
+        - {interval: {weeks: 1}, retain: 4}
+        - {interval: {months: 1}, retain: 3}
+      # list of volumes to target by tag
+      volumes:
+        # target the monitor namespace
+        # use default backup/retention policy
+        - tags: {kubernetes.io/created-for/pvc/namespace: "monitor"}
+          # append to the labels tag
+          labels:
+            - prod-elk-monitor

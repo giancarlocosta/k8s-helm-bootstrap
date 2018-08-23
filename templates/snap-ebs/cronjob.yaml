@@ -1,0 +1,62 @@
+{{- if .Values.snapEbs.enabled }}
+# Runs the EBS snapshot manager from the FPC ops suite
+#   See spec docs at https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: snap-ebs
+  namespace: {{ .Values.snapEbs.namespace }}
+spec:
+  # Don't let two instance run at the same time
+  concurrencyPolicy: Forbid
+  # Reminder: "m h d m w" or @hourly / @daily / etc
+  schedule: "@hourly"
+  # Only retain the last 5 successful and failed Job Pods.
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: snap-ebs
+              image: localhost:4567/ops/backup-tools:master-33490
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  value: "{{ .Values.snapEbs.EBS_SNAP_PASSWORD_ACCESSKEY }}"
+                - name: AWS_SECRET_ACCESS_KEY
+                  value: "{{ .Values.snapEbs.EBS_SNAP_PASSWORD_SECRETKEY }}"
+              command:
+                - "/usr/local/bin/ops"
+                - "aws"
+                - "ec2"
+                - "ebs"
+                - "snap"
+                - "run"
+                - "-m"
+                - "/etc/ops/snap-ebs.yaml"
+                - "-r"
+                - "us-west-2"
+                # copy tags from volumes
+                - "--tags"
+                # exclude volumes that don't match our tag filters
+                - "--exclude"
+                # use rate-limiting so we don't trip on the AWS API
+                - "--limit"
+                - "20"
+#             resources:
+#               limits:
+#                 cpu: 250m
+#                 memory: 600Mi
+#               requests:
+#                 cpu: 100m
+#                 memory: 100Mi
+              volumeMounts:
+                - name: "snap-ebs-config"
+                  mountPath: /etc/ops/
+          restartPolicy: OnFailure
+          volumes:
+            - name: "snap-ebs-config"
+              configMap:
+                name: "snap-ebs-config"
+{{- end }}

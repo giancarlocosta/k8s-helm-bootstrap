@@ -1,0 +1,13 @@
+{{- if .Values.snapEbs.enabled }}
+# config for the EBS snapshot manager
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: snap-ebs-config
+  namespace: {{ .Values.snapEbs.namespace }}
+data:
+{{- range $key, $value := .Values.snapEbs.config }}
+  {{ $key }}: |-
+{{ $value | indent 4 }}
+{{- end }}
+{{- end }}

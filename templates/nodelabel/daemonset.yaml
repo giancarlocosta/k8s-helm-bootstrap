@@ -1,0 +1,60 @@
+{{- if .Values.nodelabel.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nodelabel
+  namespace: {{ .Values.nodelabel.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: nodelabel-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: nodelabel
+    namespace: {{ .Values.nodelabel.namespace }}
+---
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: nodelabel
+  namespace: {{ .Values.nodelabel.namespace }}
+  labels:
+    app: nodelabel
+spec:
+  template:
+    metadata:
+      labels:
+        app: nodelabel
+      name: nodelabel
+    spec:
+      serviceAccountName: nodelabel
+      # Tolerate all taints (run on every node)
+      tolerations:
+        - operator: "Exists"
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: nodelabel
+        imagePullPolicy: Always
+        image: gcosta/nodelabel:bash
+        env:
+          - name: AWS_DEFAULT_REGION
+            value: {{ .Values.nodelabel.PROD_READONLY_SA_AWS_DEFAULT_REGION }}
+          - name: AWS_ACCESS_KEY_ID
+            value: {{ .Values.nodelabel.PROD_READONLY_SA_AWS_ACCESS_KEY_ID }}
+          - name: AWS_SECRET_ACCESS_KEY
+            value: {{ .Values.nodelabel.PROD_READONLY_SA_AWS_SECRET_ACCESS_KEY }}
+          # Run the labeler every 5 minutes (300 seconds) by default
+          - name: EXECUTION_INTERVAL_SECS
+            value: "300"
+          # By default nodelabel will only add AWS tags to nodes with the keys
+          # "k8snode/labels" and "k8snode/taints". If you want all AWS tags on
+          # an instance to be applied to the corresponding kubernetes nodes,
+          # set this to "true"
+          - name: COPY_ALL_AWS_TAGS
+            value: "false"
+{{- end }}

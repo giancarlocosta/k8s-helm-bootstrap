@@ -1,0 +1,4 @@
+name: kubernetes-bootstrap
+version: 0.1.0
+description: Templates for bootstrapping a kube cluster
+engine: gotpl

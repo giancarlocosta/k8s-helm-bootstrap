@@ -1,0 +1,56 @@
+{{- if .Values.dockerRegistry.enabled }}
+# runs a Docker Registry with storage on S3
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: docker-registry
+  namespace: {{ .Values.dockerRegistry.namespace }}
+  labels:
+    app: docker-registry
+spec:
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      # Tolerate all taints (run on every node)
+      tolerations:
+        - operator: "Exists"
+      hostNetwork: True
+      containers:
+      - name: docker-registry
+        image: registry:2
+        env:
+        - name: REGISTRY_HTTP_ADDR
+          value: "localhost:4567"
+        - name: REGISTRY_STORAGE
+          value: "s3"
+        - name: REGISTRY_STORAGE_S3_ACCESSKEY
+          value: "{{ .Values.dockerRegistry.REGISTRY_STORAGE_S3_ACCESSKEY }}"
+        - name: REGISTRY_STORAGE_S3_SECRETKEY
+          value: "{{ .Values.dockerRegistry.REGISTRY_STORAGE_S3_SECRETKEY }}"
+        - name: REGISTRY_STORAGE_S3_REGION
+          value: "us-west-2"
+        - name: REGISTRY_STORAGE_S3_BUCKET
+          value: "{{ .Values.dockerRegistry.REGISTRY_STORAGE_S3_BUCKET }}"
+        - name: REGISTRY_STORAGE_S3_ENCRYPT
+          value: "true"
+        - name: REGISTRY_STORAGE_S3_SECURE
+          value: "true"
+        - name: REGISTRY_STORAGE_S3_V4AUTH
+          value: "true"
+        - name: REGISTRY_HTTP_SECRET
+          value: "{{ .Values.dockerRegistry.REGISTRY_HTTP_SECRET }}"
+        ports:
+        - name: registry
+          containerPort: 4567
+          hostPort: 4567
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 250m
+            memory: 600Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+{{- end }}
